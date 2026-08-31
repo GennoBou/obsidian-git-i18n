@@ -1,6 +1,7 @@
 {
     "name": "obsidian-git",
     "version": "26.9.1",
+    "packageManager": "pnpm@11.24.0",
     "description": "Integrate Git version control with automatic backup and other advanced features in Obsidian.md",
     "main": "main.js",
     "scripts": {
