@@ -1,45 +1,44 @@
-# Obsidian Git Plugin (i18n)
+# Obsidian Git (i18n Edition)
 
-[![GitHub release](https://img.shields.io/github/v/release/GennoBou/obsidian-git-i18n?include_prereleases)](https://github.com/GennoBou/obsidian-git-i18n/releases)
 [![i18n CI](https://github.com/GennoBou/obsidian-git-i18n/actions/workflows/i18n-ci.yml/badge.svg)](https://github.com/GennoBou/obsidian-git-i18n/actions/workflows/i18n-ci.yml)
+[![BRAT Release](https://github.com/GennoBou/obsidian-git-i18n/actions/workflows/brat-release.yml/badge.svg)](https://github.com/GennoBou/obsidian-git-i18n/actions/workflows/brat-release.yml)
 
-このリポジトリは [Vinzent03/obsidian-git](https://github.com/Vinzent03/obsidian-git) の多言語化（i18n）フォークです。日本語UIに完全対応しています。
+> [!NOTE]
+> **About this i18n Fork / 多言語版について**
+>
+> This repository is a fork of the [original plugin](https://github.com/Vinzent03/obsidian-git) that introduces internationalization (i18n) support and Japanese localization resources.
+> It is intended for personal and community use. To install this plugin in Obsidian, please use the **[Obsidian42 - BRAT](https://github.com/TfTHacker/obsidian42-brat)** plugin.
+> Once the upstream plugin officially supports internationalization and Japanese locales, this repository will be archived.
+>
+> **Installation via BRAT**:
+> 1. Enable the BRAT plugin in Obsidian.
+> 2. Run `BRAT: Plugins: Add a beta plugin for testing` from the Command Palette.
+> 3. Enter this repository URL: `https://github.com/GennoBou/obsidian-git-i18n`
+>
+> **Custom Translations (localize.json)**:
+> - You can add custom translations or override text by editing `localize.json` in the plugin folder (`.obsidian/plugins/obsidian-git-i18n/`).
+> - Set your target language code in `"language"` (e.g. `"en"`, `"ja"`, `"de"`), modify `"translations"`, and reload Obsidian.
+> - Deleting `localize.json` and reloading Obsidian will reset it to the default template.
+>
+> ---
+>
+> 本リポジトリは、[オリジナルプラグイン](https://github.com/Vinzent03/obsidian-git) を多言語化 (i18n) し、日本語リソースを追加したフォーク版です。
+> 個人利用・コミュニティ提供を目的としており、Obsidianへのインストールは **[Obsidian42 - BRAT](https://github.com/TfTHacker/obsidian42-brat)** プラグイン経由で行ってください。
+> 本家が多言語対応と日本語ロケールを公式実装したとき、本リポジトリの役目は終えアーカイブされます。
+>
+> **BRATでのインストール手順**:
+> 1. Obsidianで BRAT プラグインを有効化
+> 2. コマンドパレットから `BRAT: Plugins: Add a beta plugin for testing` を実行
+> 3. 本リポジトリのURL (`https://github.com/GennoBou/obsidian-git-i18n`) を入力
+>
+> **独自翻訳の追加・カスタマイズ (localize.json)**:
+> - プラグインフォルダ内の `localize.json` を編集することで、独自翻訳の追加や上書きが可能です。
+> - `"language"` に使用したい言語コード（例: 英語=`"en"`, 日本語=`"ja"`, ドイツ語=`"de"` 等）を入力し、`"translations"` 以下を書き換えてアプリを再起動すると反映されます。
+> - `localize.json` を削除してアプリを再起動すると、初期状態に自動復元されます。
 
 ---
 
-## 🚀 インストール方法 (BRAT経由)
-
-Obsidian のコミュニティプラグイン [BRAT (Beta Reviewers Auto-update Tester)](https://github.com/TfTHacker/obsidian-42-brat) を使用して簡単に導入・自動更新できます。
-
-1. Obsidian の設定で **BRAT** プラグインをインストール・有効化します。
-2. コマンドパレット (`Ctrl+P` / `Cmd+P`) から `BRAT: Add a beta plugin for testing` を実行します。
-3. リポジトリURLとして以下を入力します：
-   ```text
-   https://github.com/GennoBou/obsidian-git-i18n
-   ```
-4. プラグイン一覧に **Git (i18n)** が追加されるので、有効化します。
-
-> **Note**: 公式版 `obsidian-git` が既にインストールされている場合は、競合を避けるため無効化またはアンインストールしてからご利用ください。
-
----
-
-## 🌐 カスタム翻訳・動的ローカライズ (`localize.json`)
-
-本プラグインはプラグインフォルダ（`.obsidian/plugins/obsidian-git-i18n/localize.json`）にカスタム翻訳ファイルを配置することで、UI文言を動的にオーバーライドできます。
-
-```json
-{
-  "language": "ja",
-  "translations": {
-    "Commit-and-sync": "コミット＆同期",
-    "Stage all": "すべてステージ"
-  }
-}
-```
-
----
-
-# Original Documentation (Obsidian Git Plugin)
+# Original Obsidian Git Plugin
 
 A powerful community plugin for [Obsidian.md](https://obsidian.md) that brings Git integration right into your vault. Automatically commit, pull, push, and see your changes — all within Obsidian.
 
