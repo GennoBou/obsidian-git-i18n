@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import type { Editor, TFile } from "obsidian";
 import { Notice } from "obsidian";
 import type { GitManager } from "./gitManager/gitManager";
@@ -29,7 +30,7 @@ export async function openLineInGitHub(
             );
         }
     } else {
-        new Notice("It seems like you are not using GitHub");
+        new Notice(t("It seems like you are not using GitHub"));
     }
 }
 
@@ -48,7 +49,7 @@ export async function openHistoryInGitHub(file: TFile, manager: GitManager) {
             `https://github.com/${user}/${repo}/commits/${branch}/${filePath}`
         );
     } else {
-        new Notice("It seems like you are not using GitHub");
+        new Notice(t("It seems like you are not using GitHub"));
     }
 }
 
@@ -105,7 +106,7 @@ async function getData(
                 } else {
                     return {
                         result: "failure",
-                        reason: "Failed to get remote url of submodule",
+                        reason: t("Failed to get remote url of submodule"),
                     };
                 }
             }
@@ -115,14 +116,14 @@ async function getData(
     if (remoteBranch == null) {
         return {
             result: "failure",
-            reason: "Remote branch is not configured",
+            reason: t("Remote branch is not configured"),
         };
     }
 
     if (branch == null) {
         return {
             result: "failure",
-            reason: "Failed to get current branch name",
+            reason: t("Failed to get current branch name"),
         };
     }
 
@@ -132,7 +133,7 @@ async function getData(
         if (remoteUrl == null) {
             return {
                 result: "failure",
-                reason: "Failed to get remote url",
+                reason: t("Failed to get remote url"),
             };
         }
     }
@@ -142,7 +143,7 @@ async function getData(
     if (res == null) {
         return {
             result: "failure",
-            reason: "Could not parse remote url",
+            reason: t("Could not parse remote url"),
         };
     } else {
         const [isGitHub, httpsUser, httpsRepo, sshUser, sshRepo] = res;

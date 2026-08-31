@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "src/i18n";
     import { setIcon, TFile } from "obsidian";
     import { hoverPreview } from "src/utils";
     import type { GitManager } from "src/gitManager/gitManager";
@@ -111,7 +112,7 @@
                 {#if fileOpenableInObsidian(change.vaultPath, view.app)}
                     <div
                         data-icon="go-to-file"
-                        aria-label="Open File"
+                        aria-label={t("Open file")}
                         bind:this={buttons[0]}
                         onclick={open}
                         class="clickable-icon"
@@ -119,7 +120,7 @@
                 {/if}
                 <div
                     data-icon="minus"
-                    aria-label="Unstage"
+                    aria-label={t("Unstage")}
                     bind:this={buttons[1]}
                     onclick={unstage}
                     class="clickable-icon"

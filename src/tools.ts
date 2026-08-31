@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { Notice, Platform, TFile } from "obsidian";
 import {
     CONFLICT_OUTPUT_FILE,
@@ -153,7 +154,7 @@ export default class Tools {
         if (command === undefined) return;
 
         this.plugin.promiseQueue.addTask(async () => {
-            const notice = new Notice(`Running '${command}'...`, 999_999);
+            const notice = new Notice(t("Running '{command}'...", { command }), 999_999);
 
             try {
                 const res = await gitManager.rawCommand(command);

@@ -1,3 +1,4 @@
+import { t } from "src/i18n";
 import type { Debouncer, ViewStateResult, WorkspaceLeaf } from "obsidian";
 import { debounce, ItemView, Platform, setIcon } from "obsidian";
 import { SPLIT_DIFF_VIEW_CONFIG } from "src/constants";
@@ -140,9 +141,9 @@ export default class SplitDiffView extends ItemView {
             if (fileName?.endsWith(".md")) fileName = fileName.slice(0, -3);
             let suffix: string;
             if (this.state.bRef == undefined) {
-                suffix = " (Working Tree)";
+                suffix = ` (${t("Working Tree")})`;
             } else if (this.state.bRef == "") {
-                suffix = " (Index)";
+                suffix = ` (${t("Index")})`;
             } else {
                 suffix = "(" + this.state.bRef.substring(0, 7) + ")";
             }
@@ -290,7 +291,7 @@ export default class SplitDiffView extends ItemView {
         stageButton.addClass("clickable-icon");
         stageButton.setAttr(
             "aria-label",
-            this.state.bRef == undefined ? "Stage hunk" : "Unstage hunk"
+            this.state.bRef == undefined ? t("Stage hunk") : t("Unstage hunk")
         );
         setIcon(stageButton, this.state.bRef == undefined ? "plus" : "minus");
 
@@ -328,7 +329,7 @@ export default class SplitDiffView extends ItemView {
         if (this.state.bRef == undefined) {
             const resetButton = contentEl.createDiv();
             resetButton.addClass("clickable-icon");
-            resetButton.setAttr("aria-label", "Reset hunk");
+            resetButton.setAttr("aria-label", t("Reset hunk"));
             setIcon(resetButton, "undo");
             resetButton.onmousedown = (_) => {
                 const source = this.mergeView!.a;

@@ -14,6 +14,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
+        "check-i18n": "node scripts/check-i18n.mjs",
         "all": "pnpm run tsc && pnpm run svelte && pnpm run format && pnpm run lint && pnpm run test"
     },
     "keywords": [],

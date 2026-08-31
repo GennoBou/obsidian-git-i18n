@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import debug from "debug";
 import * as fsPromises from "fs/promises";
 import type { FileSystemAdapter } from "obsidian";
@@ -56,7 +57,7 @@ export class SimpleGit extends GitManager {
                         this.plugin.settings.basePath
                     );
                 } else if (!ignoreError) {
-                    new Notice("ObsidianGit: Base path does not exist");
+                    new Notice(t("ObsidianGit: Base path does not exist"));
                 }
             }
             this.absoluteRepoPath = basePath;

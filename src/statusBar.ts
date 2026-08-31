@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { setIcon, moment } from "obsidian";
 import type ObsidianGit from "./main";
 import { GitOperation, type GitProgress } from "./types";
@@ -99,7 +100,7 @@ export class StatusBar {
         if (this.plugin.localStorage.getConflict()) {
             setIcon(this.conflictEl, "alert-circle");
             this.conflictEl.ariaLabel =
-                "You have merge conflicts. Resolve them and commit afterwards.";
+                t("You have merge conflicts. Resolve them and commit afterwards.");
             this.conflictEl.style.marginRight = "5px";
             this.conflictEl.addClass(this.base + "conflict");
         } else {
@@ -110,7 +111,7 @@ export class StatusBar {
         if (this.plugin.localStorage.getPausedAutomatics()) {
             setIcon(this.pausedEl, "pause-circle");
             this.pausedEl.ariaLabel =
-                "Automatic routines are currently paused.";
+                t("Automatic routines are currently paused.");
             this.pausedEl.style.marginRight = "5px";
             this.pausedEl.addClass(this.base + "paused");
         } else {
@@ -120,7 +121,7 @@ export class StatusBar {
 
         if (this.progress) {
             this.statusBarEl.ariaLabel = this.getProgressTooltip(
-                "Git operation in progress..."
+                t("Git operation in progress...")
             );
             setIcon(this.iconEl, this.getProgressIcon());
             this.displayProgressText();
@@ -133,28 +134,28 @@ export class StatusBar {
                 this.displayFromNow();
                 break;
             case GitOperation.commit:
-                this.statusBarEl.ariaLabel = "Committing changes...";
+                this.statusBarEl.ariaLabel = t("Committing changes...");
                 setIcon(this.iconEl, "git-commit");
                 this.textEl.empty();
                 this.statusBarEl.addClass(this.base + "commit");
                 break;
             case GitOperation.push:
                 this.statusBarEl.ariaLabel =
-                    this.getProgressTooltip("Pushing changes...");
+                    this.getProgressTooltip(t("Pushing changes..."));
                 setIcon(this.iconEl, "upload");
                 this.displayProgressText();
                 this.statusBarEl.addClass(this.base + "push");
                 break;
             case GitOperation.pull:
                 this.statusBarEl.ariaLabel =
-                    this.getProgressTooltip("Pulling changes...");
+                    this.getProgressTooltip(t("Pulling changes..."));
                 setIcon(this.iconEl, "download");
                 this.displayProgressText();
                 this.statusBarEl.addClass(this.base + "pull");
                 break;
             case GitOperation.fetch:
                 this.statusBarEl.ariaLabel = this.getProgressTooltip(
-                    "Fetching from remote..."
+                    t("Fetching from remote...")
                 );
                 setIcon(this.iconEl, "download");
                 this.displayProgressText();
@@ -162,14 +163,14 @@ export class StatusBar {
                 break;
             case GitOperation.checkout:
                 this.statusBarEl.ariaLabel = this.getProgressTooltip(
-                    "Checking out branch..."
+                    t("Checking out branch...")
                 );
                 setIcon(this.iconEl, "git-branch");
                 this.displayProgressText();
                 this.statusBarEl.addClass(this.base + "checkout");
                 break;
             default:
-                this.statusBarEl.ariaLabel = "Failed on initialization!";
+                this.statusBarEl.ariaLabel = t("Failed on initialization!");
                 setIcon(this.iconEl, "alert-triangle");
                 this.textEl.empty();
                 this.statusBarEl.addClass(this.base + "failed-init");
@@ -237,12 +238,12 @@ export class StatusBar {
             }Last Commit: ${fromNow}`;
 
             if ((this.unPushedCommits ?? 0) > 0) {
-                this.statusBarEl.ariaLabel += `\n(${this.unPushedCommits} unpushed commits)`;
+                this.statusBarEl.ariaLabel += `\n${t("({count} unpushed commits)", { count: this.unPushedCommits ?? 0 })}`;
             }
         } else {
             this.statusBarEl.ariaLabel = offlineMode
-                ? "Git is offline"
-                : "Git is ready";
+                ? t("Git is offline")
+                : t("Git is ready");
         }
 
         if (offlineMode) {

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createPatch } from "diff";
 import type {
     AuthCallback,
@@ -490,7 +491,7 @@ export class IsomorphicGit extends GitManager {
     }
 
     async pull(): Promise<FileStatusResult[]> {
-        const progressNotice = this.showNotice("Initializing pull");
+        const progressNotice = this.showNotice(t("Initializing pull"));
         return this.withGitOperation(GitOperation.pull, async () => {
             try {
                 const localCommit = await this.resolveRef("HEAD");
@@ -571,7 +572,7 @@ export class IsomorphicGit extends GitManager {
                     upstreamCommit
                 );
 
-                this.showNotice("Finished pull", false);
+                this.showNotice(t("Finished pull"), false);
 
                 return changedFiles.map<FileStatusResult>((file) => ({
                     path: file.path,
@@ -599,7 +600,7 @@ export class IsomorphicGit extends GitManager {
         if (!(await this.canPush())) {
             return 0;
         }
-        const progressNotice = this.showNotice("Initializing push");
+        const progressNotice = this.showNotice(t("Initializing push"));
         return this.withGitOperation(GitOperation.push, async () => {
             try {
                 const status = await this.branchInfo();
@@ -765,7 +766,7 @@ export class IsomorphicGit extends GitManager {
     }
 
     async clone(url: string, dir: string, depth?: number): Promise<void> {
-        const progressNotice = this.showNotice("Initializing clone");
+        const progressNotice = this.showNotice(t("Initializing clone"));
         try {
             await this.wrapFS(
                 git.clone({
@@ -823,7 +824,7 @@ export class IsomorphicGit extends GitManager {
     }
 
     async fetch(remote?: string): Promise<void> {
-        const progressNotice = this.showNotice("Initializing fetch");
+        const progressNotice = this.showNotice(t("Initializing fetch"));
 
         try {
             const args = {

@@ -15,6 +15,7 @@
         "forceConsistentCasingInFileNames": true,
         "allowSyntheticDefaultImports": true,
         "lib": ["ES2021", "DOM"],
+        "resolveJsonModule": true,
         "verbatimModuleSyntax": true,
     },
     "include": [
