@@ -1,4 +1,4 @@
-import { t } from "./i18n";
+import { t, initLocalizeJson } from "./i18n";
 import { Errors } from "isomorphic-git";
 import type { Debouncer, Menu, TAbstractFile, WorkspaceLeaf } from "obsidian";
 import {
@@ -146,6 +146,8 @@ export default class ObsidianGit extends Plugin {
     refreshUpdatedHead() {}
 
     async onload() {
+        await initLocalizeJson(this.app, this.manifest);
+
         console.log(
             "loading " +
                 this.manifest.name +
