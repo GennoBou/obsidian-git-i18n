@@ -1,4 +1,45 @@
-# Obsidian Git Plugin
+# Obsidian Git Plugin (i18n)
+
+[![GitHub release](https://img.shields.io/github/v/release/GennoBou/obsidian-git-i18n?include_prereleases)](https://github.com/GennoBou/obsidian-git-i18n/releases)
+[![i18n CI](https://github.com/GennoBou/obsidian-git-i18n/actions/workflows/i18n-ci.yml/badge.svg)](https://github.com/GennoBou/obsidian-git-i18n/actions/workflows/i18n-ci.yml)
+
+このリポジトリは [Vinzent03/obsidian-git](https://github.com/Vinzent03/obsidian-git) の多言語化（i18n）フォークです。日本語UIに完全対応しています。
+
+---
+
+## 🚀 インストール方法 (BRAT経由)
+
+Obsidian のコミュニティプラグイン [BRAT (Beta Reviewers Auto-update Tester)](https://github.com/TfTHacker/obsidian-42-brat) を使用して簡単に導入・自動更新できます。
+
+1. Obsidian の設定で **BRAT** プラグインをインストール・有効化します。
+2. コマンドパレット (`Ctrl+P` / `Cmd+P`) から `BRAT: Add a beta plugin for testing` を実行します。
+3. リポジトリURLとして以下を入力します：
+   ```text
+   https://github.com/GennoBou/obsidian-git-i18n
+   ```
+4. プラグイン一覧に **Git (i18n)** が追加されるので、有効化します。
+
+> **Note**: 公式版 `obsidian-git` が既にインストールされている場合は、競合を避けるため無効化またはアンインストールしてからご利用ください。
+
+---
+
+## 🌐 カスタム翻訳・動的ローカライズ (`localize.json`)
+
+本プラグインはプラグインフォルダ（`.obsidian/plugins/obsidian-git-i18n/localize.json`）にカスタム翻訳ファイルを配置することで、UI文言を動的にオーバーライドできます。
+
+```json
+{
+  "language": "ja",
+  "translations": {
+    "Commit-and-sync": "コミット＆同期",
+    "Stage all": "すべてステージ"
+  }
+}
+```
+
+---
+
+# Original Documentation (Obsidian Git Plugin)
 
 A powerful community plugin for [Obsidian.md](https://obsidian.md) that brings Git integration right into your vault. Automatically commit, pull, push, and see your changes — all within Obsidian.
 

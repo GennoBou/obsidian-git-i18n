@@ -1,10 +1,10 @@
 {
-    "author": "Vinzent",
+    "author": "Vinzent (i18n by GennoBou)",
     "authorUrl": "https://github.com/Vinzent03",
-    "id": "obsidian-git",
-    "name": "Git",
-    "description": "Integrate Git version control with automatic backup and other advanced features.",
+    "id": "obsidian-git-i18n",
+    "name": "Git (i18n)",
+    "description": "Integrate Git version control with automatic backup and other advanced features. Multi-language (i18n) version with Japanese support.",
     "isDesktopOnly": false,
     "fundingUrl": "https://ko-fi.com/vinzent",
-    "version": "2.39.0"
+    "version": "26.9.1"
 }
