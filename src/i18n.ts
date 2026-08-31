@@ -5,9 +5,10 @@
 
 import type { App, PluginManifest } from "obsidian";
 import en from "./locales/en.json";
+import ja from "./locales/ja.json";
 
 export type TranslationDict = Record<string, string>;
-export type SupportedLocale = "en" | string;
+export type SupportedLocale = "en" | "ja" | string;
 
 export interface LocalizeConfig {
     language?: string;
@@ -20,6 +21,7 @@ export interface LocalizeConfig {
 
 const builtinTranslations: Record<string, TranslationDict> = {
     en: en as TranslationDict,
+    ja: ja as TranslationDict,
 };
 
 let customTranslations: Record<string, TranslationDict> = {};
