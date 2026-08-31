@@ -355,7 +355,7 @@ export function addCommmands(plugin: ObsidianGit) {
                 const modal = new GeneralModal(plugin, {
                     options: ["NO", "YES"],
                     placeholder:
-                        t("Do you really want to delete the repository (.git directory)? plugin action cannot be undone."),
+                        t("Do you really want to de...#9de3fd"),
                     onlySelection: true,
                 });
                 const shouldDelete = (await modal.openAndGetResult()) === "YES";

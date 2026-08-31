@@ -130,7 +130,7 @@ export default class DiffView extends ItemView {
                     });
                     div.createEl("br");
                     div.createSpan({
-                        text: t("File not found: ") + this.state.bFile,
+                        text: t("File not found:") + this.state.bFile,
                     });
                 }
             } finally {

@@ -9,7 +9,7 @@ export class CustomMessageModal extends SuggestModal<string> {
     constructor(private readonly plugin: ObsidianGit) {
         super(plugin.app);
         this.setPlaceholder(
-            t("Type your message and select optional the version with the added date.")
+            t("Type your message and se...#692294")
         );
     }
 

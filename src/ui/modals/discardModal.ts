@@ -46,7 +46,7 @@ export class DiscardModal extends Modal {
         let titlePart = "";
         if (this.path != "") {
             if (sum > 1) {
-                titlePart = t("files in \"{path}\"", { path: this.path });
+                titlePart = t("files in path...#9b9da5", { path: this.path });
             } else {
                 titlePart = `"${this.path}"`;
             }
@@ -58,14 +58,14 @@ export class DiscardModal extends Modal {
             contentEl
                 .createEl("p")
                 .setText(
-                    t("Are you sure you want to DELETE the {count} untracked files? They are deleted according to your Obsidian trash setting.", { count: this.deleteCount })
+                    t("Are you sure you want to...#f35dd8", { count: this.deleteCount })
                 );
         }
         if (this.discardCount > 0) {
             contentEl
                 .createEl("p")
                 .setText(
-                    t("Are you sure you want to discard ALL changes in {count} tracked files?", { count: this.discardCount })
+                    t("Are you sure you want to...#8ca6c9", { count: this.discardCount })
                 );
         }
         const div = contentEl.createDiv({ cls: "modal-button-container" });

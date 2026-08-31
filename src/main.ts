@@ -575,7 +575,7 @@ export default class ObsidianGit extends Plugin {
                     break;
                 case "missing-repo":
                     new Notice(
-                        t("Can't find a valid git repository. Please create one via the given command or clone an existing repo."),
+                        t("Can t find a valid git r...#39219d"),
                         10000
                     );
                     break;
@@ -680,7 +680,7 @@ export default class ObsidianGit extends Plugin {
             if (dir === ".") {
                 const modal = new GeneralModal(this, {
                     options: ["NO", "YES"],
-                    placeholder: t("Does your remote repo contain a {configDir} directory at the root?", { configDir: this.app.vault.configDir }),
+                    placeholder: t("Does your remote repo co...#f75e30", { configDir: this.app.vault.configDir }),
                     onlySelection: true,
                 });
                 const containsConflictDir = await modal.openAndGetResult();
@@ -692,7 +692,7 @@ export default class ObsidianGit extends Plugin {
                         "DELETE ALL YOUR LOCAL CONFIG AND PLUGINS";
                     const modal = new GeneralModal(this, {
                         options: [t("Abort clone"), confirmOption],
-                        placeholder: t("To avoid conflicts, the local {configDir} directory needs to be deleted.", { configDir: this.app.vault.configDir }),
+                        placeholder: t("To avoid conflicts the l...#7e2ed3", { configDir: this.app.vault.configDir }),
                         onlySelection: true,
                     });
                     const shouldDelete =
@@ -726,7 +726,7 @@ export default class ObsidianGit extends Plugin {
                     return;
                 }
             }
-            new Notice(t("Cloning new repo into \"{dir}\"", { dir }));
+            new Notice(t("Cloning new repo into di...#a1087c", { dir }));
             const oldBase = this.settings.basePath;
             const customDir = dir && dir !== ".";
             //Set new base path before clone to ensure proper .git/index file location in isomorphic-git

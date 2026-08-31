@@ -100,7 +100,7 @@ export class StatusBar {
         if (this.plugin.localStorage.getConflict()) {
             setIcon(this.conflictEl, "alert-circle");
             this.conflictEl.ariaLabel =
-                t("You have merge conflicts. Resolve them and commit afterwards.");
+                t("You have merge conflicts...#f15d13");
             this.conflictEl.style.marginRight = "5px";
             this.conflictEl.addClass(this.base + "conflict");
         } else {
