@@ -58,9 +58,9 @@ export class ObsidianGitSettingsTab extends PluginSettingTab {
 
         let commitOrSync: string;
         if (plugin.settings.differentIntervalCommitAndPush) {
-            commitOrSync = "commit";
+            commitOrSync = t("commit");
         } else {
-            commitOrSync = "commit-and-sync";
+            commitOrSync = t("commit-and-sync");
         }
 
         const gitReady = plugin.gitReady;
@@ -957,7 +957,7 @@ export class ObsidianGitSettingsTab extends PluginSettingTab {
             const info = containerEl.createDiv();
             info.setAttr("align", "center");
             info.setText(
-                "Debugging and logging:\nYou can always see the logs of this and every other plugin by opening the console with"
+                t("Debugging and logging: You can always see the logs...#a72d1f")
             );
             const keys = containerEl.createDiv();
             keys.setAttr("align", "center");
