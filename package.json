@@ -21,6 +21,10 @@
     "keywords": [],
     "author": "Vinzent03",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Vinzent03/obsidian-git"
+    },
     "type": "module",
     "standard-version": {
         "t": ""
