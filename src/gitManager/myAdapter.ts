@@ -66,6 +66,8 @@ export class MyAdapter {
         path: string,
         opts?: string | { encoding?: string; [key: string]: unknown }
     ) {
+        if (path === undefined) return undefined;
+        path = normalizePath(path);
         this.maybeLog("Read: " + path + JSON.stringify(opts));
         const encoding = typeof opts === "string" ? opts : opts?.encoding;
         if (encoding === "utf8") {
@@ -98,6 +100,7 @@ export class MyAdapter {
     }
     async writeFile(path: string, data: string | BinaryData) {
         this.maybeLog("Write: " + path);
+        path = normalizePath(path);
 
         if (typeof data === "string") {
             const file = this.vault.getAbstractFileByPath(path);
@@ -129,6 +132,8 @@ export class MyAdapter {
         }
     }
     async readdir(path: string) {
+        path = normalizePath(path);
+        this.maybeLog("ReadDir: " + path);
         if (path === ".") path = "/";
         const res = await this.adapter.list(path);
         const all = [...res.files, ...res.folders];
@@ -143,6 +148,7 @@ export class MyAdapter {
         return formattedAll;
     }
     async mkdir(path: string) {
+        path = normalizePath(path);
         if (path === "." || path === "/") return;
 
         if (!this.isHiddenPath(path)) {
@@ -156,6 +162,8 @@ export class MyAdapter {
         return this.adapter.mkdir(path);
     }
     async rmdir(path: string, opts?: RmdirOptions) {
+        path = normalizePath(path);
+        this.maybeLog("Rmdir: " + path + JSON.stringify(opts));
         if (!this.isHiddenPath(path)) {
             const file = this.vault.getAbstractFileByPath(path);
             if (file instanceof TFolder) {
@@ -174,6 +182,8 @@ export class MyAdapter {
         );
     }
     async stat(path: string) {
+        path = normalizePath(path);
+
         if (this.isIndexPath(path)) {
             if (
                 this.index !== undefined &&
@@ -240,6 +250,7 @@ export class MyAdapter {
         }
     }
     async unlink(path: string) {
+        path = normalizePath(path);
         if (!this.isHiddenPath(path)) {
             const file = this.vault.getAbstractFileByPath(path);
             if (file instanceof TFile) {
@@ -298,7 +309,7 @@ export class MyAdapter {
         if (path.startsWith(this.gitDir)) {
             return true;
         }
-        return normalizePath(path)
+        return path
             .split("/")
             .some(
                 (component) => component.startsWith(".") && component !== "."
