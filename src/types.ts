@@ -1,4 +1,5 @@
 import type { LineAuthorSettings } from "src/editor/lineAuthor/model";
+import type { AutoCommitGlobMode } from "./autoCommitGlobs";
 import type {
     Editor,
     EventRef,
@@ -7,6 +8,11 @@ import type {
     TFile,
     WorkspaceLeaf,
 } from "obsidian";
+
+export type CommitMode = "smart" | "staged" | "all";
+
+export type ConflictResolutionMode =
+    "both" | "live-preview" | "source" | "disabled";
 
 export interface ObsidianGitSettings {
     commitMessage: string;
@@ -20,8 +26,12 @@ export interface ObsidianGitSettings {
     autoPushInterval: number;
     autoPullInterval: number;
     autoPullOnBoot: boolean;
-    autoCommitOnlyStaged: boolean;
+    /** How repository-relative globs select files for automatic staging. */
+    autoCommitGlobMode: AutoCommitGlobMode;
+    /** Repository-relative Git globs, one per line. Manual commits are unaffected. */
+    autoCommitGlobs: string;
     syncMethod: SyncMethod;
+    rebaseAutoStash: RebaseAutoStash;
     mergeStrategy: MergeStrategy;
     /**
      * Whether to push on commit-and-sync
@@ -61,8 +71,15 @@ export interface ObsidianGitSettings {
      * @deprecated Using `localstorage` instead
      */
     username?: string;
+    /** ID of the mobile Git server password in Obsidian Secret Storage. */
+    gitServerPasswordSecret: string;
     differentIntervalCommitAndPush: boolean;
     changedFilesInStatusBar: boolean;
+    /**
+     * Limit file-oriented Git operations and file listings to the vault when
+     * the vault is a subdirectory of the repository.
+     */
+    limitToVault: boolean;
 
     /**
      * @deprecated Migrated to `syncMethod = 'merge'`
@@ -73,6 +90,7 @@ export interface ObsidianGitSettings {
     showedMobileNotice: boolean;
     refreshSourceControlTimer: number;
     showBranchStatusBar: boolean;
+    conflictResolutionMode: ConflictResolutionMode;
     lineAuthor: LineAuthorSettings;
     setLastSaveToLastCommit: boolean;
     gitDir: string;
@@ -80,6 +98,15 @@ export interface ObsidianGitSettings {
     authorInHistoryView: ShowAuthorInHistoryView;
     dateInHistoryView: boolean;
     diffStyle: "git_unified" | "split";
+    /**
+     * Time in milliseconds available to compute an editable split diff.
+     * Read-only split diffs use ten times this value.
+     */
+    diffTimeout: number;
+    /**
+     * Whether smart commit actions stage all changes when the index is empty.
+     */
+    autoStageOnEmptyIndex: boolean;
     hunks: {
         hunkCommands: boolean;
         showSigns: boolean;
@@ -92,13 +119,21 @@ export interface ObsidianGitSettings {
  */
 export function mergeSettingsByPriority(
     low: Omit<ObsidianGitSettings, "autoCommitMessage">,
-    high: ObsidianGitSettings
+    high: ObsidianGitSettings & { autoCommitOnlyStaged?: boolean }
 ): ObsidianGitSettings {
+    const { autoCommitOnlyStaged, ...storedSettings } = high;
     const lineAuthor = Object.assign({}, low.lineAuthor, high.lineAuthor);
-    return Object.assign({}, low, high, { lineAuthor });
+    const settings = Object.assign({}, low, storedSettings, { lineAuthor });
+    if (autoCommitOnlyStaged) {
+        settings.autoCommitGlobMode = "include";
+        settings.autoCommitGlobs = "";
+    }
+    return settings;
 }
 
 export type SyncMethod = "rebase" | "merge" | "reset";
+
+export type RebaseAutoStash = "enabled" | "disabled" | "git-config";
 
 export type MergeStrategy = "none" | "ours" | "theirs";
 
@@ -114,10 +149,20 @@ export interface Status {
     changed: FileStatusResult[];
     staged: FileStatusResult[];
 
-    /*
-     * Only available for `SimpleGit` gitManager
+    /**
+     * Number of staged files omitted because they are outside the vault.
+     * Only nonzero if {@link ObsidianGitSettings.limitToVault} is true.
      */
+    stagedOutsideVault: number;
+
+    /** Paths with unresolved entries in the Git index. */
     conflicted: string[];
+    /**
+     * Number of conflicted files outside the vault.
+     *
+     * Only nonzero if {@link ObsidianGitSettings.limitToVault} is true.
+     * */
+    conflictedOutsideVault: number;
 }
 
 export interface GitTimestamp {
@@ -236,8 +281,119 @@ export interface FileStatusResult {
     workingDir: string;
 }
 
+export type NotReadyResult = {
+    status: "skipped";
+    reason: "not-ready";
+};
+
+export type PullResult =
+    | { status: "updated"; files: FileStatusResult[]; outsideVault: number }
+    | { status: "up-to-date" }
+    | { status: "skipped"; reason: "no-upstream" }
+    | NotReadyResult;
+
+export type PushResult =
+    | { status: "pushed"; files: number | null }
+    | { status: "up-to-date" }
+    | { status: "blocked"; reason: "no-branch" }
+    | { status: "blocked"; reason: "conflicts"; files: number }
+    | { status: "blocked"; reason: "merge-in-progress" }
+    | { status: "skipped"; reason: "no-upstream" }
+    | NotReadyResult;
+
+export type FetchResult =
+    | { status: "fetched" }
+    | { status: "skipped"; reason: "no-upstream" }
+    | NotReadyResult;
+
+export type SwitchBranchResult =
+    | { status: "switched"; branch: string }
+    | { status: "cancelled" }
+    | NotReadyResult;
+
+export type CreateBranchResult =
+    | { status: "created"; branch: string }
+    | { status: "cancelled" }
+    | NotReadyResult;
+
+export type DeleteBranchResult =
+    | { status: "deleted"; branch: string }
+    | { status: "cancelled" }
+    | NotReadyResult;
+
+export type FileStateMutationResult = { status: "updated" } | NotReadyResult;
+
+export type ListChangedFilesResult =
+    | { status: "displayed" }
+    | { status: "blocked"; reason: "too-many-changes"; files: number }
+    | NotReadyResult;
+
+export type DiscardActionResult =
+    | { status: "discarded"; target: "file" | "tracked" | "all" }
+    | { status: "cancelled" }
+    | { status: "skipped"; reason: "no-changes" }
+    | NotReadyResult;
+
+export type InitRepositoryResult = { status: "initialized" };
+
+export type DeleteRepositoryResult =
+    { status: "deleted" } | { status: "not-found" } | { status: "cancelled" };
+
+export type CloneRepositoryResult =
+    | { status: "cloned" }
+    | {
+          status: "cancelled";
+          reason: "no-url" | "no-directory" | "safety-declined" | "no-depth";
+      }
+    | { status: "invalid"; reason: "depth" };
+
+export type EditRemoteResult =
+    | { status: "updated"; remote: string }
+    | { status: "cancelled" }
+    | NotReadyResult;
+
+export type RemoveRemoteResult =
+    | { status: "removed"; remote: string }
+    | { status: "cancelled" }
+    | NotReadyResult;
+
+export type SetUpstreamResult =
+    | { status: "updated"; branch: string }
+    | { status: "cancelled" }
+    | NotReadyResult;
+
+export type RawCommandResult = { status: "completed"; output: string };
+
+export type CommitResult =
+    | { status: "committed"; files: number }
+    | {
+          status: "nothing-to-commit";
+          reason: "no-changes" | "nothing-staged";
+      }
+    | {
+          status: "skipped";
+          reason: "merge-in-progress" | "files-too-large";
+      }
+    | NotReadyResult;
+
+export type CommitAndSyncResult =
+    | { status: "synced"; commit: CommitResult }
+    | {
+          status: "commit-only";
+          reason: "push-disabled";
+          commit: CommitResult;
+      }
+    | { status: "nothing-to-push"; commit: CommitResult }
+    | {
+          status: "skipped";
+          reason: "commit-skipped" | "push-skipped";
+          commit: CommitResult;
+      }
+    | NotReadyResult;
+
 export interface PluginState {
     offlineMode: boolean;
+    mergeInProgress: boolean;
     operation: GitOperation;
 }
 
@@ -358,15 +514,34 @@ export type DiffViewState = {
     bRef?: string;
 };
 
+export type ReadOnlyFileViewState = {
+    /** The repository-relative path of the file. */
+    file: string;
+
+    /** The commit containing the file snapshot. */
+    ref: string;
+};
+
 export enum FileType {
     staged,
     changed,
     pulled,
+    conflicted,
 }
 
 export class NoNetworkError extends Error {
     constructor(public readonly originalError: string) {
         super("No network connection available");
+    }
+}
+
+export class GitConflictError extends Error {
+    constructor(
+        public readonly files: string[],
+        public readonly cause: unknown
+    ) {
+        super("Git operation stopped because of merge conflicts");
+        this.name = "GitConflictError";
     }
 }
 
@@ -449,11 +624,29 @@ declare module "obsidian" {
             ctx?: unknown
         ): EventRef;
         /**
+         * Emitted after repository references may have changed, including
+         * remote-tracking refs and branch switches that leave the HEAD commit unchanged.
+         * Successful operations may emit this even when refs did not move.
+         */
+        on(
+            name: "obsidian-git:refs-changed",
+            callback: () => void,
+            ctx?: unknown
+        ): EventRef;
+        /**
          * Emitted when a new cached status is available.
          */
         on(
             name: "obsidian-git:status-changed",
             callback: (status: Status) => void,
+            ctx?: unknown
+        ): EventRef;
+        /**
+         * Emitted when the repository changes from being available or not.
+         */
+        on(
+            name: "obsidian-git:repository-state-changed",
+            callback: () => void,
             ctx?: unknown
         ): EventRef;
 
@@ -472,7 +665,9 @@ declare module "obsidian" {
         trigger(name: "obsidian-git:refresh"): void;
         trigger(name: "obsidian-git:loading-status"): void;
         trigger(name: "obsidian-git:head-change"): void;
+        trigger(name: "obsidian-git:refs-changed"): void;
         trigger(name: "obsidian-git:status-changed", status: Status): void;
+        trigger(name: "obsidian-git:repository-state-changed"): void;
         trigger(
             name: "obsidian-git:menu",
             menu: Menu,

@@ -8,7 +8,7 @@ import en from "./locales/en.json";
 import ja from "./locales/ja.json";
 
 export type TranslationDict = Record<string, string>;
-export type SupportedLocale = "en" | "ja" | string;
+export type SupportedLocale = string;
 
 export interface LocalizeConfig {
     language?: string;
@@ -20,11 +20,11 @@ export interface LocalizeConfig {
 }
 
 const builtinTranslations: Record<string, TranslationDict> = {
-    en: en as TranslationDict,
-    ja: ja as TranslationDict,
+    en,
+    ja,
 };
 
-let customTranslations: Record<string, TranslationDict> = {};
+const customTranslations: Record<string, TranslationDict> = {};
 
 /**
  * Detect current Obsidian locale
@@ -42,8 +42,13 @@ export function getObsidianLocale(): string {
 
     // 2. Check moment.js locale if available in Obsidian environment
     try {
-        if (typeof (window as unknown as { moment?: { locale: () => string } }).moment?.locale === "function") {
-            const momentLocale = (window as unknown as { moment: { locale: () => string } }).moment.locale();
+        if (
+            typeof (window as unknown as { moment?: { locale: () => string } })
+                .moment?.locale === "function"
+        ) {
+            const momentLocale = (
+                window as unknown as { moment: { locale: () => string } }
+            ).moment.locale();
             if (momentLocale) {
                 return momentLocale.toLowerCase();
             }
@@ -63,7 +68,10 @@ export function getObsidianLocale(): string {
 /**
  * Register external or custom translation dictionary (e.g. from user overlay or i18n-plus)
  */
-export function registerCustomLocale(locale: string, dict: TranslationDict): void {
+export function registerCustomLocale(
+    locale: string,
+    dict: TranslationDict
+): void {
     const key = locale.toLowerCase();
     customTranslations[key] = {
         ...(customTranslations[key] || {}),
@@ -77,27 +85,40 @@ export function registerCustomLocale(locale: string, dict: TranslationDict): voi
  * If `language` matches a built-in locale (e.g. "ja"), it will override built-in translations.
  * If `language` is empty (""), it will be ignored.
  */
-export async function initLocalizeJson(app: App, manifest: PluginManifest): Promise<void> {
+export async function initLocalizeJson(
+    app: App,
+    manifest: PluginManifest
+): Promise<void> {
     try {
-        const pluginDir = manifest.dir ?? `${app.vault.configDir}/plugins/${manifest.id}`;
+        const pluginDir =
+            manifest.dir ?? `${app.vault.configDir}/plugins/${manifest.id}`;
         const localizePath = `${pluginDir}/localize.json`;
 
         // 🌟 自動生成: ファイルが存在しない場合、内蔵英語リソースから初期テンプレートを自動生成
-        if (!await app.vault.adapter.exists(localizePath)) {
+        if (!(await app.vault.adapter.exists(localizePath))) {
             const initialTemplate = {
                 $schema: "https://json-schema.org/draft/2020-12/schema",
-                description: "Custom UI translation overlay. Set language code (e.g. \"de\", \"fr\") and modify translations.",
+                description:
+                    'Custom UI translation overlay. Set language code (e.g. "de", "fr") and modify translations.',
                 language: "",
                 translations: builtinTranslations.en || {},
             };
-            await app.vault.adapter.write(localizePath, JSON.stringify(initialTemplate, null, 2) + "\n");
+            await app.vault.adapter.write(
+                localizePath,
+                JSON.stringify(initialTemplate, null, 2) + "\n"
+            );
             return;
         }
 
         const rawContent = await app.vault.adapter.read(localizePath);
         const data = JSON.parse(rawContent) as LocalizeConfig;
 
-        const targetLang = (data.language || data.locale || data.lang || "").trim();
+        const targetLang = (
+            data.language ||
+            data.locale ||
+            data.lang ||
+            ""
+        ).trim();
         const targetResource = data.resource || data.translations || data.dict;
 
         if (targetLang !== "" && targetResource) {
@@ -112,10 +133,15 @@ export async function initLocalizeJson(app: App, manifest: PluginManifest): Prom
  * Format string with placeholder parameters:
  * formatString("Hello {name}!", { name: "Obsidian" }) => "Hello Obsidian!"
  */
-function interpolate(template: string, params?: Record<string, string | number>): string {
+function interpolate(
+    template: string,
+    params?: Record<string, string | number>
+): string {
     if (!params) return template;
-    return template.replace(/\{(\w+)\}/g, (match, key) => {
-        return Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : match;
+    return template.replace(/\{(\w+)\}/g, (match: string, key: string) => {
+        return Object.prototype.hasOwnProperty.call(params, key)
+            ? String(params[key])
+            : match;
     });
 }
 
@@ -123,7 +149,11 @@ function interpolate(template: string, params?: Record<string, string | number>)
  * Translate a message by original English text
  * Fallback chain: Custom Locale -> Built-in Locale -> Built-in 'en' -> Raw Key
  */
-export function t(key: string, params?: Record<string, string | number>, forcedLocale?: string): string {
+export function t(
+    key: string,
+    params?: Record<string, string | number>,
+    forcedLocale?: string
+): string {
     const locale = (forcedLocale || getObsidianLocale()).toLowerCase();
     const shortLocale = locale.split("-")[0] || locale;
 

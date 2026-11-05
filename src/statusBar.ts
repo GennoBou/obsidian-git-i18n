@@ -81,42 +81,53 @@ export class StatusBar {
         ) {
             this.statusBarEl.empty();
 
-            this.conflictEl = this.statusBarEl.createDiv();
+            this.conflictEl = this.statusBarEl.createDiv({
+                cls: this.base + "conflict-indicator",
+            });
             this.conflictEl.setAttribute("data-tooltip-position", "top");
-            this.conflictEl.style.float = "left";
+            this.conflictEl.setAttribute("role", "button");
+            this.conflictEl.onclick = () => this.plugin.openMergeConflictHelp();
+            this.conflictEl.onkeydown = (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    this.plugin.openMergeConflictHelp();
+                }
+            };
 
-            this.pausedEl = this.statusBarEl.createDiv();
+            this.pausedEl = this.statusBarEl.createDiv({
+                cls: this.base + "paused-indicator",
+            });
             this.pausedEl.setAttribute("data-tooltip-position", "top");
-            this.pausedEl.style.float = "left";
 
-            this.iconEl = this.statusBarEl.createDiv();
-            this.iconEl.style.float = "left";
+            this.iconEl = this.statusBarEl.createDiv({
+                cls: this.base + "icon",
+            });
 
-            this.textEl = this.statusBarEl.createDiv();
-            this.textEl.style.float = "right";
-            this.textEl.style.marginLeft = "5px";
+            this.textEl = this.statusBarEl.createDiv({
+                cls: this.base + "text",
+            });
         }
 
-        if (this.plugin.localStorage.getConflict()) {
-            setIcon(this.conflictEl, "alert-circle");
-            this.conflictEl.ariaLabel =
-                t("You have merge conflicts...#f15d13");
-            this.conflictEl.style.marginRight = "5px";
+        if (this.plugin.state.mergeInProgress) {
+            setIcon(this.conflictEl, "git-merge");
+            this.conflictEl.ariaLabel = t("You have merge conflicts...#f15d13");
+            this.conflictEl.tabIndex = 0;
             this.conflictEl.addClass(this.base + "conflict");
         } else {
             this.conflictEl.empty();
-            this.conflictEl.style.marginRight = "";
+            this.conflictEl.tabIndex = -1;
+            this.conflictEl.removeClass(this.base + "conflict");
         }
 
         if (this.plugin.localStorage.getPausedAutomatics()) {
             setIcon(this.pausedEl, "pause-circle");
-            this.pausedEl.ariaLabel =
-                t("Automatic routines are currently paused.");
-            this.pausedEl.style.marginRight = "5px";
+            this.pausedEl.ariaLabel = t(
+                "Automatic routines are currently paused."
+            );
             this.pausedEl.addClass(this.base + "paused");
         } else {
             this.pausedEl.empty();
-            this.pausedEl.style.marginRight = "";
+            this.pausedEl.removeClass(this.base + "paused");
         }
 
         if (this.progress) {
@@ -126,6 +137,7 @@ export class StatusBar {
             setIcon(this.iconEl, this.getProgressIcon());
             this.displayProgressText();
             this.statusBarEl.addClass(this.base + "progress");
+            this.addMergeHelpToTooltip();
             return;
         }
 
@@ -140,15 +152,17 @@ export class StatusBar {
                 this.statusBarEl.addClass(this.base + "commit");
                 break;
             case GitOperation.push:
-                this.statusBarEl.ariaLabel =
-                    this.getProgressTooltip(t("Pushing changes..."));
+                this.statusBarEl.ariaLabel = this.getProgressTooltip(
+                    t("Pushing changes...")
+                );
                 setIcon(this.iconEl, "upload");
                 this.displayProgressText();
                 this.statusBarEl.addClass(this.base + "push");
                 break;
             case GitOperation.pull:
-                this.statusBarEl.ariaLabel =
-                    this.getProgressTooltip(t("Pulling changes..."));
+                this.statusBarEl.ariaLabel = this.getProgressTooltip(
+                    t("Pulling changes...")
+                );
                 setIcon(this.iconEl, "download");
                 this.displayProgressText();
                 this.statusBarEl.addClass(this.base + "pull");
@@ -176,6 +190,18 @@ export class StatusBar {
                 this.statusBarEl.addClass(this.base + "failed-init");
                 break;
         }
+        this.addMergeHelpToTooltip();
+    }
+
+    private addMergeHelpToTooltip(): void {
+        if (!this.plugin.state.mergeInProgress) return;
+
+        const mergeHelp =
+            "Merge in progress. Select the merge icon for help resolving and finishing it.";
+        const current = this.statusBarEl.ariaLabel;
+        this.statusBarEl.ariaLabel = current
+            ? `${mergeHelp}\n${current}`
+            : mergeHelp;
     }
 
     private displayProgressText(): void {
@@ -223,12 +249,21 @@ export class StatusBar {
                 return "upload";
             case "Checking out":
                 return "git-branch";
+            case undefined:
             default:
                 return "git-pull-request";
         }
     }
 
     private displayFromNow(): void {
+        if (!this.plugin.gitReady) {
+            this.statusBarEl.ariaLabel = "Git is not ready";
+            setIcon(this.iconEl, "alert-triangle");
+            this.textEl.empty();
+            this.statusBarEl.addClass(this.base + "failed-init");
+            return;
+        }
+
         const timestamp = this.lastCommitTimestamp;
         const offlineMode = this.plugin.state.offlineMode;
         if (timestamp) {
@@ -267,8 +302,7 @@ export class StatusBar {
     private async refreshCommitTimestamp() {
         this.lastCommitTimestamp =
             await this.plugin.gitManager.getLastCommitTime();
-        this.unPushedCommits =
-            await this.plugin.gitManager.getUnpushedCommits();
+        this.unPushedCommits = await this.plugin.getUnpushedCommits();
     }
 
     public remove() {

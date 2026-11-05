@@ -131,18 +131,24 @@ export default class AutomaticsManager {
         if (this.isAutomaticsDisabled) {
             return;
         }
-        let time = (minutes ?? this.plugin.settings.autoSaveInterval) * 60000;
         if (this.plugin.settings.autoBackupAfterFileChange) {
             if (minutes === 0) {
                 this.doAutoCommitAndSync();
             } else {
-                this.plugin.autoCommitDebouncer = debounce(
+                // Reuse the existing debouncer. Vault events during the run
+                // that just finished have already re-armed it; replacing it
+                // would either drop those events or, without cancel, leave the
+                // old one firing on its own schedule while the user keeps
+                // editing.
+                this.plugin.autoCommitDebouncer ??= debounce(
                     () => this.doAutoCommitAndSync(),
-                    time,
+                    this.plugin.settings.autoSaveInterval * 60000,
                     true
                 );
             }
         } else {
+            let time =
+                (minutes ?? this.plugin.settings.autoSaveInterval) * 60000;
             // max timeout in js
             if (time > 2147483647) time = 2147483647;
             this.timeoutIDCommitAndSync = window.setTimeout(
@@ -175,13 +181,15 @@ export default class AutomaticsManager {
                         }
                     }
                 }
-                const onlyStaged = this.plugin.settings.autoCommitOnlyStaged;
                 if (this.plugin.settings.differentIntervalCommitAndPush) {
-                    await this.plugin.commit({ fromAuto: true, onlyStaged });
+                    await this.plugin.gitActions.commit({
+                        fromAuto: true,
+                        mode: "all",
+                    });
                 } else {
-                    await this.plugin.commitAndSync({
+                    await this.plugin.gitActions.commitAndSync({
                         fromAutoBackup: true,
-                        onlyStaged,
+                        mode: "all",
                     });
                 }
                 return true;
@@ -209,7 +217,7 @@ export default class AutomaticsManager {
 
     private doAutoPull(): void {
         this.plugin.promiseQueue.addTask(
-            () => this.plugin.pullChangesFromRemote(),
+            () => this.plugin.gitActions.pullChangesFromRemote(),
             () => {
                 this.saveLastAuto(new Date(), "pull");
                 this.startAutoPull();
@@ -230,7 +238,7 @@ export default class AutomaticsManager {
 
     private doAutoPush(): void {
         this.plugin.promiseQueue.addTask(
-            () => this.plugin.push(),
+            () => this.plugin.gitActions.push(),
             () => {
                 this.saveLastAuto(new Date(), "push");
                 this.startAutoPush();

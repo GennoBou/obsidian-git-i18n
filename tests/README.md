@@ -24,11 +24,11 @@ Tests use Vitest in a Node environment.
 
 Configuration lives in `vitest.config.ts`:
 
--   `tests/**/*.test.ts` files are included.
--   `tests/setup.ts` runs before tests.
--   `obsidian` imports are mapped to `tests/stubs/obsidian.ts`.
--   `src` imports are mapped to the project `src` directory.
--   Coverage uses the V8 provider.
+- `tests/**/*.test.ts` files are included.
+- `tests/setup.ts` runs before tests.
+- `obsidian` imports are mapped to `tests/stubs/obsidian.ts`.
+- `src` imports are mapped to the project `src` directory.
+- Coverage uses the V8 provider.
 
 ## Obsidian Stub
 
@@ -45,11 +45,11 @@ specific `app`, `vault`, `workspace`, or plugin shape.
 
 `tests/setup.ts` provides small runtime globals used by plugin code:
 
--   `window`
--   `activeWindow`
--   `activeDocument`
--   `Array.prototype.last`
--   `Math.clamp`
+- `window`
+- `activeWindow`
+- `activeDocument`
+- `Array.prototype.last`
+- `Math.clamp`
 
 These exist because Obsidian and the plugin runtime provide them, but Node does
 not.
@@ -65,10 +65,10 @@ need a real plugin instance.
 
 The fake currently provides typed spies for:
 
--   `app.workspace.trigger`
--   `setPluginState`
--   `log`
--   `displayError`
+- `app.workspace.trigger`
+- `setPluginState`
+- `log`
+- `displayError`
 
 ### Git Repo Fixture
 
@@ -76,15 +76,15 @@ The fake currently provides typed spies for:
 
 `createRepoWithOrigin()` returns a `TestRepo` with:
 
--   `dir`
--   `remotePath`
--   `repoPath`
--   `git`
--   `raw(args)`
--   `write(filePath, content)`
--   `writeAndCommit(filePath, content, message)`
--   `appendAndCommit(filePath, content, message)`
--   `cleanup()`
+- `dir`
+- `remotePath`
+- `repoPath`
+- `git`
+- `raw(args)`
+- `write(filePath, content)`
+- `writeAndCommit(filePath, content, message)`
+- `appendAndCommit(filePath, content, message)`
+- `cleanup()`
 
 Use `repo.raw([...])` for assertions where exact Git CLI semantics matter.
 
@@ -102,16 +102,42 @@ This registers the repo for automatic cleanup after the current test.
 Call `repo.cleanup()` directly only when a test needs to remove the repository
 before the test finishes.
 
+### GitManager Contract Harness
+
+`tests/helpers/gitManagerHarness.ts` exposes the real `SimpleGit` and
+`IsomorphicGit` implementations through the same test context. Shared behavior
+belongs in `tests/gitManager/gitManager.test.ts`, which runs every assertion
+against both backends and gives each test a fresh temporary repository.
+The SimpleGit harness calls `setGitInstance()`; the fixture's separate Git
+client is reserved for setup and repository-level assertions.
+
+SimpleGit-specific tests can create everything they need in one call:
+
+```ts
+const { repo, plugin, manager } = withCleanup(
+    await createSimpleGitTestContext()
+);
+```
+
+The factory also accepts `configurePlugin`, `plugin`, `fixture`, and
+`gitClient` options. Use `gitClient` only when a focused unit test deliberately
+needs a mocked SimpleGit client; otherwise the production `setGitInstance()`
+path is used.
+
+Keep native Git integration details in `simpleGit.test.ts` and
+isomorphic-git filesystem, transport, and merge-metadata details in
+`isomorphicGit.test.ts`.
+
 ## Design Principles
 
--   Prefer pure unit tests for pure logic.
--   Prefer real temporary Git repositories for Git workflow behavior.
--   Avoid mocking `simple-git` for methods whose value is in the Git workflow.
--   Avoid launching Obsidian for the default test suite.
--   Keep the Obsidian stub minimal and test-only.
--   Keep helpers small and behavior-focused.
--   Do not overfit tests to incidental implementation details when Git can be used
-    as an oracle.
+- Prefer pure unit tests for pure logic.
+- Prefer real temporary Git repositories for Git workflow behavior.
+- Avoid mocking `simple-git` for methods whose value is in the Git workflow.
+- Avoid launching Obsidian for the default test suite.
+- Keep the Obsidian stub minimal and test-only.
+- Keep helpers small and behavior-focused.
+- Do not overfit tests to incidental implementation details when Git can be used
+  as an oracle.
 
 ## Future Test Plans
 
@@ -122,12 +148,12 @@ Templater plugin.
 
 Potential E2E scenarios:
 
--   plugin loads in Obsidian
--   commands are registered
--   source control view opens
--   changed/staged files appear in the UI
--   stage, unstage, commit, and discard flows work from the UI
--   settings persist after reload
+- plugin loads in Obsidian
+- commands are registered
+- source control view opens
+- changed/staged files appear in the UI
+- stage, unstage, commit, and discard flows work from the UI
+- settings persist after reload
 
 This should be a separate command such as `pnpm run test:e2e`, not part of the
 default `pnpm run test`.

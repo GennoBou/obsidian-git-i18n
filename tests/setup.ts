@@ -19,6 +19,11 @@ const fallbackDocument = {
 declare global {
     interface Array<T> {
         last(): T | undefined;
+        first(): T | undefined;
+    }
+
+    interface String {
+        contains(target: string): boolean;
     }
 
     interface Math {
@@ -35,6 +40,24 @@ if (!Array.prototype.last) {
     });
 }
 
+if (!Array.prototype.first) {
+    Object.defineProperty(Array.prototype, "first", {
+        configurable: true,
+        value: function first<T>(this: T[]): T | undefined {
+            return this[0];
+        },
+    });
+}
+
+if (!String.prototype.contains) {
+    Object.defineProperty(String.prototype, "contains", {
+        configurable: true,
+        value: function (this: string, target: string): boolean {
+            return this.includes(target);
+        },
+    });
+}
+
 if (!Math.clamp) {
     Object.defineProperty(Math, "clamp", {
         configurable: true,
@@ -42,6 +65,11 @@ if (!Math.clamp) {
             Math.min(Math.max(value, min), max),
     });
 }
+
+Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: { debug: "-simple-git" },
+});
 
 Object.defineProperty(globalThis, "activeWindow", {
     configurable: true,
