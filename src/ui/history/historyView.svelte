@@ -5,6 +5,7 @@
     import type ObsidianGit from "src/main";
     import type { LogEntry } from "src/types";
     import { onMount } from "svelte";
+    import { coalesce } from "src/coalesce";
     import LogComponent from "./components/logComponent.svelte";
     import type HistoryView from "./historyView";
 
@@ -20,6 +21,7 @@
     let showTree: boolean = $state(plugin.settings.treeStructure);
 
     let layoutBtn: HTMLElement | undefined = $state();
+    const refresh = coalesce(refreshNow);
 
     $effect(() => {
         if (layoutBtn) {
@@ -28,12 +30,11 @@
     });
 
     onMount(() => {
-        view.registerEvent(
-            view.app.workspace.on(
-                "obsidian-git:head-change",
-                () => void refresh().catch(console.error)
-            )
+        const event = view.app.workspace.on(
+            "obsidian-git:refs-changed",
+            () => void refresh().catch(console.error)
         );
+        return () => view.app.workspace.offref(event);
     });
 
     $effect(() => {
@@ -62,7 +63,7 @@
         refresh().catch(console.error);
     }
 
-    async function refresh() {
+    async function refreshNow() {
         if (!plugin.gitReady) {
             logs = undefined;
             return;
@@ -75,8 +76,11 @@
         } else {
             limit = logs!.length;
         }
-        logs = await plugin.gitManager.log(undefined, false, limit);
-        loading = false;
+        try {
+            logs = await plugin.gitManager.log(undefined, false, limit);
+        } finally {
+            loading = false;
+        }
     }
 
     async function appendLogs() {

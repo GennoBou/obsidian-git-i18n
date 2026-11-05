@@ -8,10 +8,6 @@ type WorkspaceRootWithSide = {
     readonly side?: "left" | "right";
 };
 
-export function assertNever(x: never): never {
-    throw new Error(`Unexpected object: ${String(x)}`);
-}
-
 export function plural(
     count: number,
     singular: string,
@@ -122,6 +118,7 @@ export function arrayProxyWithNewLength<T>(array: T[], length: number): T[] {
             if (prop === "length") {
                 return Math.min(length, target.length);
             }
+            // eslint-disable-next-line @typescript-eslint/unbound-method -- Methods are called on the proxy, which supplies their receiver.
             return target[prop as keyof T[]];
         },
     });

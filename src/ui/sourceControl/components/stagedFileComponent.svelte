@@ -2,7 +2,6 @@
     import { t } from "src/i18n";
     import { setIcon, TFile } from "obsidian";
     import { hoverPreview } from "src/utils";
-    import type { GitManager } from "src/gitManager/gitManager";
     import type { FileStatusResult } from "src/types";
     import {
         fileIsBinary,
@@ -17,10 +16,9 @@
     interface Props {
         change: FileStatusResult;
         view: GitView;
-        manager: GitManager;
     }
 
-    let { change, view, manager }: Props = $props();
+    let { change, view }: Props = $props();
     let buttons: HTMLElement[] = $state([]);
     let side = $derived(getTooltipSide(view.leaf));
 
@@ -68,12 +66,9 @@
     function unstage(event: MouseEvent) {
         event.stopPropagation();
 
-        manager
-            .unstage(change.path, false)
-            .catch((e) => view.plugin.displayError(e))
-            .finally(() => {
-                view.app.workspace.trigger("obsidian-git:refresh");
-            });
+        view.plugin.promiseQueue.addTask(() =>
+            view.plugin.gitActions.unstage(change.path, false)
+        );
     }
 </script>
 

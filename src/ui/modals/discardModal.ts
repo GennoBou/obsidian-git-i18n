@@ -1,7 +1,6 @@
 import { t } from "../../i18n";
 import type { App } from "obsidian";
 import { Modal } from "obsidian";
-import { plural } from "src/utils";
 
 export type DiscardResult = false | "delete" | "discard";
 
