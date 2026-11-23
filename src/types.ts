@@ -26,6 +26,8 @@ export interface ObsidianGitSettings {
     autoPushInterval: number;
     autoPullInterval: number;
     autoPullOnBoot: boolean;
+    /** Seconds without Git output before a desktop Git command is aborted. 0 disables the timeout. */
+    gitTimeout: number;
     /** How repository-relative globs select files for automatic staging. */
     autoCommitGlobMode: AutoCommitGlobMode;
     /** Repository-relative Git globs, one per line. Manual commits are unaffected. */
@@ -372,7 +374,8 @@ export type CommitResult =
       }
     | {
           status: "skipped";
-          reason: "merge-in-progress" | "files-too-large";
+          reason:
+              "merge-in-progress" | "rebase-in-progress" | "files-too-large";
       }
     | NotReadyResult;
 
@@ -394,6 +397,7 @@ export type CommitAndSyncResult =
 export interface PluginState {
     offlineMode: boolean;
     mergeInProgress: boolean;
+    rebaseInProgress: boolean;
     operation: GitOperation;
 }
 

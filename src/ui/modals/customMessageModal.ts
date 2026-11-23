@@ -1,16 +1,45 @@
 import { t } from "../../i18n";
-import { moment, SuggestModal } from "obsidian";
+import { moment, Modal, Platform } from "obsidian";
 import type ObsidianGit from "src/main";
 
-export class CustomMessageModal extends SuggestModal<string> {
+export type CommitMessageDatePosition = "none" | "prefix" | "suffix";
+
+export function buildCommitMessage(
+    message: string,
+    date: string,
+    datePosition: CommitMessageDatePosition
+): string {
+    if (datePosition === "none" || message.trim() === "") return message;
+    return datePosition === "prefix"
+        ? `${date}: ${message}`
+        : `${message}: ${date}`;
+}
+
+export function shouldSubmitOnEnter(
+    event: Pick<
+        KeyboardEvent,
+        "key" | "ctrlKey" | "metaKey" | "shiftKey" | "altKey" | "isComposing"
+    >,
+    isMobile: boolean
+): boolean {
+    return (
+        !isMobile &&
+        event.key === "Enter" &&
+        (event.ctrlKey || event.metaKey) &&
+        !event.shiftKey &&
+        !event.altKey &&
+        !event.isComposing
+    );
+}
+
+export class CustomMessageModal extends Modal {
     resolve:
         ((value: string | PromiseLike<string> | undefined) => void) | null =
         null;
+    private textarea: HTMLTextAreaElement | null = null;
+
     constructor(private readonly plugin: ObsidianGit) {
         super(plugin.app);
-        this.setPlaceholder(
-            t("Type your message and se...#692294")
-        );
     }
 
     openAndGetResult(): Promise<string | undefined> {
@@ -20,26 +49,79 @@ export class CustomMessageModal extends SuggestModal<string> {
         });
     }
 
-    onClose() {
-        // onClose gets called before onChooseItem
-        void new Promise((resolve) => window.setTimeout(resolve, 10)).then(
-            () => {
-                if (this.resolve) this.resolve(undefined);
+    onOpen() {
+        const { contentEl, titleEl } = this;
+        titleEl.setText(t("Commit message"));
+
+        this.textarea = contentEl.createEl("textarea", {
+            cls: "obsidian-git-commit-message-input",
+            attr: {
+                rows: "6",
+                placeholder: t("Type your commit message"),
+                "aria-label": t("Commit message"),
+            },
+        });
+        this.textarea.addEventListener("keydown", (event) => {
+            if (shouldSubmitOnEnter(event, Platform.isMobile)) {
+                event.preventDefault();
+                this.submit("none");
             }
+        });
+        this.textarea.focus();
+
+        const buttons = contentEl.createDiv({ cls: "modal-button-container" });
+        const commit = buttons.createEl("button", {
+            cls: "mod-cta",
+            text: t("Commit"),
+            attr: Platform.isMobile
+                ? {}
+                : {
+                      "aria-keyshortcuts": Platform.isMacOS
+                          ? "Meta+Enter"
+                          : "Control+Enter",
+                  },
+        });
+        if (!Platform.isMobile) {
+            commit.createEl("kbd", {
+                text: Platform.isMacOS ? "⌘ ↵" : "Ctrl ↵",
+                cls: "obsidian-git-commit-message-shortcut",
+                attr: { "aria-hidden": "true" },
+            });
+        }
+        commit.addEventListener("click", () => this.submit("none"));
+        const prefix = buttons.createEl("button", {
+            text: t("Prefix date"),
+            attr: { "aria-label": t("Commit with the date prefixed") },
+        });
+        prefix.addEventListener("click", () => this.submit("prefix"));
+        const suffix = buttons.createEl("button", {
+            text: t("Suffix date"),
+            attr: { "aria-label": t("Commit with the date suffixed") },
+        });
+        suffix.addEventListener("click", () => this.submit("suffix"));
+        buttons
+            .createEl("button", { text: t("Cancel") })
+            .addEventListener("click", () => this.close());
+    }
+
+    onClose() {
+        const resolve = this.resolve;
+        this.resolve = null;
+        this.textarea = null;
+        this.contentEl.empty();
+
+        if (resolve) resolve(undefined);
+    }
+
+    private submit(datePosition: CommitMessageDatePosition): void {
+        const message = buildCommitMessage(
+            this.textarea?.value ?? "",
+            moment().format(this.plugin.settings.commitDateFormat),
+            datePosition
         );
-    }
-
-    getSuggestions(query: string): string[] {
-        const date = moment().format(this.plugin.settings.commitDateFormat);
-        if (query == "") query = "...";
-        return [query, `${date}: ${query}`, `${query}: ${date}`];
-    }
-
-    renderSuggestion(value: string, el: HTMLElement): void {
-        el.innerText = value;
-    }
-
-    onChooseSuggestion(value: string, __: MouseEvent | KeyboardEvent) {
-        if (this.resolve) this.resolve(value);
+        const resolve = this.resolve;
+        this.resolve = null;
+        this.close();
+        resolve?.(message);
     }
 }

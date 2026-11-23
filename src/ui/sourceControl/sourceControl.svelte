@@ -31,6 +31,7 @@
     let repositoryMissing = $state(false);
     let setupInProgress = $state(false);
     let mergeInProgress = $state(false);
+    let rebaseInProgress = $state(false);
     let status: Status | undefined = $state();
     let lastPulledFiles: FileStatusResult[] = $state([]);
     let commitMessage = $derived(plugin.settings.commitMessage);
@@ -285,6 +286,7 @@
 
         status = plugin.cachedStatus;
         mergeInProgress = plugin.state.mergeInProgress;
+        rebaseInProgress = plugin.state.rebaseInProgress;
         loading = false;
         if (
             plugin.lastPulledFiles &&
@@ -365,7 +367,7 @@
         for (const conflict of targets) {
             counts[conflict] = 0;
             try {
-                const content = await view.app.vault.adapter.read(
+                const content = await plugin.fileSystem.read(
                     plugin.gitManager.getRelativeVaultPath(conflict)
                 );
                 counts[conflict] = countConflictSections(content);
@@ -440,14 +442,16 @@
                     disabled={setupInProgress}
                     onclick={() =>
                         runSetupAction(() => plugin.gitActions.createNewRepo())}
-                    >Initialize repository</button
                 >
+                    Initialize repository
+                </button>
                 <button
                     disabled={setupInProgress}
                     onclick={() =>
                         runSetupAction(() => plugin.gitActions.cloneNewRepo())}
-                    >Clone repository</button
                 >
+                    Clone repository
+                </button>
             </div>
         </div>
     {/if}
@@ -537,7 +541,16 @@
                 bind:this={buttons[7]}
                 onclick={triggerRefresh}
             ></div>
-            {#if mergeInProgress}
+            {#if rebaseInProgress}
+                <div
+                    id="rebase-status"
+                    class="clickable-icon nav-action-button rebase-status"
+                    data-icon="git-branch"
+                    aria-label="Rebase in progress — select for help continuing or aborting in a terminal"
+                    bind:this={buttons[12]}
+                    onclick={() => plugin.openRebaseConflictHelp()}
+                ></div>
+            {:else if mergeInProgress}
                 <div
                     id="merge-status"
                     class="clickable-icon nav-action-button merge-status"
@@ -590,8 +603,9 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             class="svg-icon right-triangle"
-                            ><path d="M3 8L12 17L21 8" /></svg
                         >
+                            <path d="M3 8L12 17L21 8" />
+                        </svg>
                     </div>
                     <div class="tree-item-inner nav-folder-title-content">
                         Conflicts
@@ -657,8 +671,9 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 class="svg-icon right-triangle"
-                                ><path d="M3 8L12 17L21 8" /></svg
                             >
+                                <path d="M3 8L12 17L21 8" />
+                            </svg>
                         </div>
                         <div class="tree-item-inner nav-folder-title-content">
                             Staged Changes
@@ -683,13 +698,9 @@
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         class="svg-icon lucide-minus"
-                                        ><line
-                                            x1="4"
-                                            y1="9"
-                                            x2="14"
-                                            y2="9"
-                                        /></svg
                                     >
+                                        <line x1="4" y1="9" x2="14" y2="9" />
+                                    </svg>
                                 </div>
                             </div>
                             <div class="files-count">
@@ -778,8 +789,9 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 class="svg-icon right-triangle"
-                                ><path d="M3 8L12 17L21 8" /></svg
                             >
+                                <path d="M3 8L12 17L21 8" />
+                            </svg>
                         </div>
 
                         <div class="tree-item-inner nav-folder-title-content">
@@ -804,10 +816,11 @@
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         class="svg-icon lucide-undo"
-                                        ><path d="M3 7v6h6" /><path
-                                            d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"
-                                        /></svg
                                     >
+                                        <path d="M3 7v6h6" /><path
+                                            d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"
+                                        />
+                                    </svg>
                                 </div>
                                 <div
                                     data-icon="plus"
@@ -827,7 +840,8 @@
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         class="svg-icon lucide-plus"
-                                        ><line
+                                    >
+                                        <line
                                             x1="12"
                                             y1="5"
                                             x2="12"
@@ -837,8 +851,8 @@
                                             y1="12"
                                             x2="19"
                                             y2="12"
-                                        /></svg
-                                    >
+                                        />
+                                    </svg>
                                 </div>
                             </div>
                             <div class="files-count">
@@ -893,8 +907,9 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     class="svg-icon right-triangle"
-                                    ><path d="M3 8L12 17L21 8" /></svg
                                 >
+                                    <path d="M3 8L12 17L21 8" />
+                                </svg>
                             </div>
 
                             <div
@@ -903,9 +918,9 @@
                                 Recently Pulled Files
                             </div>
 
-                            <span class="tree-item-flair"
-                                >{lastPulledFiles.length}</span
-                            >
+                            <span class="tree-item-flair">
+                                {lastPulledFiles.length}
+                            </span>
                         </div>
                         {#if lastPulledFilesOpen}
                             <div
@@ -994,7 +1009,8 @@
         }
     }
 
-    .merge-status {
+    .merge-status,
+    .rebase-status {
         color: var(--text-warning);
     }
 
