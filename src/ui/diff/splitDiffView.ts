@@ -122,7 +122,7 @@ export default class SplitDiffView extends ItemView {
                 const file = this.state.bFile;
                 if (file) {
                     this.ignoreNextModification = true;
-                    this.plugin.app.vault.adapter
+                    this.plugin.fileSystem
                         .write(
                             this.plugin.gitManager.getRelativeVaultPath(file),
                             data
@@ -267,7 +267,7 @@ export default class SplitDiffView extends ItemView {
         const bVaultPath = this.plugin.gitManager.getRelativeVaultPath(
             this.state.bFile
         );
-        return await this.app.vault.adapter.exists(bVaultPath);
+        return await this.plugin.fileSystem.exists(bVaultPath);
     }
 
     async updateModifiableEditor() {
@@ -276,7 +276,7 @@ export default class SplitDiffView extends ItemView {
 
         this.refreshing = true;
         try {
-            const newContent = await this.app.vault.adapter.read(
+            const newContent = await this.plugin.fileSystem.read(
                 this.plugin.gitManager.getRelativeVaultPath(this.state.bFile)
             );
             if (newContent != bEditor.state.doc.toString()) {
@@ -468,8 +468,8 @@ export default class SplitDiffView extends ItemView {
                         this.plugin.gitManager.getRelativeVaultPath(
                             this.state.bFile
                         );
-                    if (await this.app.vault.adapter.exists(bVaultPath)) {
-                        bText = await this.app.vault.adapter.read(bVaultPath);
+                    if (await this.plugin.fileSystem.exists(bVaultPath)) {
+                        bText = await this.plugin.fileSystem.read(bVaultPath);
                     } else {
                         bText = "";
                     }
