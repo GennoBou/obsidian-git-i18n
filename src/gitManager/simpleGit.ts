@@ -2,11 +2,11 @@ import { t } from "../i18n";
 import debug from "debug";
 import * as fsPromises from "fs/promises";
 import type { FileSystemAdapter } from "obsidian";
-import { normalizePath, Notice, Platform } from "obsidian";
+import { Notice, Platform } from "obsidian";
 import * as path from "path";
 import { resolve, sep } from "path";
 import type * as simple from "simple-git";
-import { simpleGit, GitError, CleanOptions } from "simple-git";
+import { simpleGit, GitError, GitPluginError, CleanOptions } from "simple-git";
 import {
     ASK_PASS_SCRIPT,
     ASK_PASS_SCRIPT_FILE,
@@ -56,17 +56,17 @@ export class SimpleGit extends GitManager {
             const adapter = this.app.vault.adapter as FileSystemAdapter;
             const vaultBasePath = adapter.getBasePath();
             let basePath = vaultBasePath;
-            // Because the basePath setting is a relative path, a leading `/` must
-            // be appended before concatenating with the path.
             if (this.plugin.settings.basePath) {
-                const exists = await adapter.exists(
-                    normalizePath(this.plugin.settings.basePath)
+                const customBasePath = path.join(
+                    vaultBasePath,
+                    this.plugin.settings.basePath
                 );
-                if (exists) {
-                    basePath = path.join(
-                        vaultBasePath,
+                if (
+                    await this.plugin.fileSystem.exists(
                         this.plugin.settings.basePath
-                    );
+                    )
+                ) {
+                    basePath = customBasePath;
                 } else if (!ignoreError) {
                     new Notice(t("ObsidianGit: Base path does not exist"));
                 }
@@ -94,6 +94,7 @@ export class SimpleGit extends GitManager {
                 envs[key] = value;
             }
 
+            const timeoutSeconds = this.plugin.settings.gitTimeout;
             this.git = simpleGit({
                 baseDir: basePath,
                 binary:
@@ -102,6 +103,17 @@ export class SimpleGit extends GitManager {
                         ? DEFAULT_WIN_GIT_PATH
                         : undefined),
                 config: ["core.quotepath=off"],
+                // Both output streams reset the timer, including progress updates.
+                timeout: { block: timeoutSeconds * 1000 },
+                errors: (error) => {
+                    if (
+                        error instanceof GitPluginError &&
+                        error.plugin === "timeout"
+                    ) {
+                        error.message = `Git command timed out after ${timeoutSeconds} second${timeoutSeconds === 1 ? "" : "s"} without output. Check for pending authentication, a locked SSH agent, or an unreachable remote. Increase or disable the Git inactivity timeout in settings if needed.`;
+                    }
+                    return error;
+                },
                 // Preserve the inherited and user-configured environment
                 allowEnvironment: [
                     ...Object.keys(envs),
@@ -501,13 +513,31 @@ export class SimpleGit extends GitManager {
     }
 
     async isMergeInProgress(): Promise<boolean> {
-        const mergeHead = await this.git.revparse(["--git-path", "MERGE_HEAD"]);
-        const mergeHeadPath = path.resolve(
+        return this.gitPathExists("MERGE_HEAD");
+    }
+
+    async isRebaseInProgress(): Promise<boolean> {
+        // Git keeps the state of an unfinished rebase in one of these
+        // directories, depending on the rebase backend. `git am` uses
+        // rebase-apply as well.
+        return (
+            (await this.gitPathExists("rebase-merge")) ||
+            (await this.gitPathExists("rebase-apply"))
+        );
+    }
+
+    /**
+     * Checks for a file or directory inside the Git directory. Git resolves
+     * the location, so worktrees, submodules and a custom Git directory work.
+     */
+    private async gitPathExists(gitPath: string): Promise<boolean> {
+        const resolved = await this.git.revparse(["--git-path", gitPath]);
+        const absolutePath = path.resolve(
             this.absoluteRepoPath,
-            mergeHead.trim()
+            resolved.trim()
         );
         try {
-            await fsPromises.access(mergeHeadPath);
+            await fsPromises.access(absolutePath);
             return true;
         } catch (error) {
             if (
@@ -793,13 +823,16 @@ export class SimpleGit extends GitManager {
 
     async applyPatch(patch: string): Promise<void> {
         const patchPath = path.join(this.relPluginConfigPath, "patch");
-        await this.app.vault.adapter.write(patchPath, patch);
-        await this.git.applyPatch(patchPath, {
-            "--cached": null,
-            "--unidiff-zero": null,
-            "--whitespace": "nowarn",
-        });
-        await this.app.vault.adapter.remove(patchPath);
+        await this.plugin.fileSystem.write(patchPath, patch);
+        try {
+            await this.git.applyPatch(this.getRelativeRepoPath(patchPath), {
+                "--cached": null,
+                "--unidiff-zero": null,
+                "--whitespace": "nowarn",
+            });
+        } finally {
+            await this.plugin.fileSystem.remove(patchPath);
+        }
     }
 
     async getUntrackedPaths(opts: { path?: string }): Promise<string[]> {
@@ -1218,14 +1251,14 @@ export class SimpleGit extends GitManager {
                 "branch",
                 "--list",
                 "--no-color",
-                "--format=%(refname)%00%(upstream:short)",
+                "--format=%(refname)%09%(upstream:short)",
             ]),
         ]);
 
         let tracking: string | undefined;
         const branches: string[] = [];
         for (const line of refs.split("\n")) {
-            const [ref, upstream] = line.split("\0");
+            const [ref, upstream] = line.split("\t");
             if (!ref?.startsWith("refs/heads/")) continue;
             const branch = ref.slice("refs/heads/".length);
             branches.push(branch);
@@ -1582,8 +1615,8 @@ export class SimpleGit extends GitManager {
         // Documentation: https://git-scm.com/docs/git-rev-parse
 
         if (
-            !(await this.app.vault.adapter.exists(
-                path.dirname(repositoryRelativeFile)
+            !(await this.plugin.fileSystem.exists(
+                this.getRelativeVaultPath(path.dirname(repositoryRelativeFile))
             ))
         ) {
             return undefined;
@@ -1618,9 +1651,9 @@ export class SimpleGit extends GitManager {
             return undefined; // not in submodule
         }
 
-        const fsAdapter = this.app.vault.adapter as FileSystemAdapter;
-        const absolutePath = fsAdapter.getFullPath(
-            path.normalize(repositoryRelativeFile)
+        const absolutePath = path.join(
+            this.absoluteRepoPath,
+            repositoryRelativeFile
         );
         const newRelativePath = path.relative(submoduleRoot, absolutePath);
 
@@ -1678,9 +1711,9 @@ export class SimpleGit extends GitManager {
         if (error instanceof GitError) {
             const message = String(error.message);
             const networkFailure =
-                message.contains("Could not resolve host") ||
-                message.contains("Unable to resolve host") ||
-                message.contains("Unable to open connection") ||
+                message.includes("Could not resolve host") ||
+                message.includes("Unable to resolve host") ||
+                message.includes("Unable to open connection") ||
                 message.match(
                     /ssh: connect to host .*? port .*?: Operation timed out/
                 ) != null ||
